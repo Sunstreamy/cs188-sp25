@@ -366,7 +366,52 @@ def betterEvaluationFunction(currentGameState: GameState):
     DESCRIPTION: <write something here so we know what you did>
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    pacmanPos = currentGameState.getPacmanPosition()
+    food = currentGameState.getFood()
+    ghostStates = currentGameState.getGhostStates()
+    capsules = currentGameState.getCapsules()
+    score = currentGameState.getScore()
+
+    foodList = food.asList()
+    if foodList:
+        minFoodDist = min(
+            [manhattanDistance(pacmanPos, foodPos) for foodPos in foodList]
+        )
+        score += 10.0 / (minFoodDist + 1)
+        score -= 4 * len(foodList)
+
+    for ghostState in ghostStates:
+        ghostPos = ghostState.getPosition()
+        ghostDist = manhattanDistance(pacmanPos, ghostPos)
+
+        if ghostState.scaredTimer > 0:
+            if ghostDist > 0:
+                score += 200.0 / ghostDist
+        else:
+            if ghostDist < 2:
+                score -= 1000
+            elif ghostDist < 3:
+                score -= 100
+
+    if capsules:
+        minCapsuleDist = min(
+            [manhattanDistance(pacmanPos, capsule) for capsule in capsules]
+        )
+
+        # 计算附近的威胁鬼魂（借鉴Q1）
+        ghostsNearby = sum(
+            1
+            for ghostState in ghostStates
+            if manhattanDistance(pacmanPos, ghostState.getPosition()) <= 3
+            and ghostState.scaredTimer == 0
+        )
+        if minCapsuleDist <= 8:  # 胶囊在合理距离内
+            if ghostsNearby > 0:
+                score += 50.0 / (minCapsuleDist + 1)
+            else:
+                score += 20.0 / (minCapsuleDist + 1)
+
+    return score
 
 
 # Abbreviation
