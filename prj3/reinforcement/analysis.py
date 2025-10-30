@@ -19,59 +19,68 @@
 # Set the given parameters to obtain the specified policies through
 # value iteration.
 
+
 def question2a():
     """
-      Prefer the close exit (+1), risking the cliff (-10).
+    Prefer the close exit (+1), risking the cliff (-10).
     """
-    answerDiscount = None
-    answerNoise = None
-    answerLivingReward = None
+    answerDiscount = 0.3
+    answerNoise = 0.0
+    answerLivingReward = -0.2
     return answerDiscount, answerNoise, answerLivingReward
+    # return  'NOT POSSIBLE'
     # If not possible, return 'NOT POSSIBLE'
+
 
 def question2b():
     """
-      Prefer the close exit (+1), but avoiding the cliff (-10).
+    Prefer the close exit (+1), but avoiding the cliff (-10).
     """
-    answerDiscount = None
-    answerNoise = None
-    answerLivingReward = None
+    answerDiscount = 0.3
+    answerNoise = 0.3
+    answerLivingReward = -0.2
     return answerDiscount, answerNoise, answerLivingReward
     # If not possible, return 'NOT POSSIBLE'
+    # return 'NOT POSSBLE'
+
 
 def question2c():
     """
-      Prefer the distant exit (+10), risking the cliff (-10).
+    Prefer the distant exit (+10), risking the cliff (-10).
     """
-    answerDiscount = None
-    answerNoise = None
-    answerLivingReward = None
+    answerDiscount = 0.8
+    answerNoise = 0.0
+    answerLivingReward = 0.5
     return answerDiscount, answerNoise, answerLivingReward
     # If not possible, return 'NOT POSSIBLE'
+
 
 def question2d():
     """
-      Prefer the distant exit (+10), avoiding the cliff (-10).
+    Prefer the distant exit (+10), avoiding the cliff (-10).
     """
-    answerDiscount = None
-    answerNoise = None
-    answerLivingReward = None
+    answerDiscount = 0.8
+    answerNoise = 0.2
+    answerLivingReward = 0.5
     return answerDiscount, answerNoise, answerLivingReward
     # If not possible, return 'NOT POSSIBLE'
+
 
 def question2e():
     """
-      Avoid both exits and the cliff (so an episode should never terminate).
+    Avoid both exits and the cliff (so an episode should never terminate).
     """
-    answerDiscount = None
-    answerNoise = None
-    answerLivingReward = None
+    answerDiscount = 0.8
+    answerNoise = 0.0
+    answerLivingReward = 10.0
     return answerDiscount, answerNoise, answerLivingReward
     # If not possible, return 'NOT POSSIBLE'
 
-if __name__ == '__main__':
-    print('Answers to analysis questions:')
+
+if __name__ == "__main__":
+    print("Answers to analysis questions:")
     import analysis
-    for q in [q for q in dir(analysis) if q.startswith('question')]:
+
+    for q in [q for q in dir(analysis) if q.startswith("question")]:
         response = getattr(analysis, q)()
-        print('  Question %s:\t%s' % (q, str(response)))
+        print("  Question %s:\t%s" % (q, str(response)))
