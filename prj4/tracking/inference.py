@@ -384,7 +384,11 @@ class DiscreteDistribution(dict):
         {}
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        total = self.total()
+        if total == 0:
+            return
+        for key in self.keys():
+            self[key] = self[key] / total
         "*** END YOUR CODE HERE ***"
 
     def sample(self):
@@ -409,7 +413,13 @@ class DiscreteDistribution(dict):
         0.0
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        total = self.total()
+        target = random.random() * total
+        cur = 0
+        for key, value in self.items():
+            cur += value
+            if cur >= target:
+                return key
         "*** END YOUR CODE HERE ***"
 
 
@@ -492,7 +502,17 @@ class InferenceModule:
         Return the probability P(noisyDistance | pacmanPosition, ghostPosition).
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        if ghostPosition == jailPosition:
+            if noisyDistance is None:
+                return 1.0
+            else:
+                return 0.0
+        if noisyDistance is None:
+            return 0.0
+
+        trueDistance = manhattanDistance(pacmanPosition, ghostPosition)
+        return busters.getObservationProbability(noisyDistance, trueDistance)
+
         "*** END YOUR CODE HERE ***"
 
     def setGhostPosition(self, gameState, ghostPosition, index):
@@ -608,7 +628,14 @@ class ExactInference(InferenceModule):
         position is known.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        pacmanPosition = gameState.getPacmanPosition()
+        jailPosition = self.getJailPosition()
+        for p in self.allPositions:
+            prior = self.beliefs[p]
+            likelihood = self.getObservationProb(
+                observation, pacmanPosition, p, jailPosition
+            )
+            self.beliefs[p] = prior * likelihood
         "*** END YOUR CODE HERE ***"
         self.beliefs.normalize()
 
@@ -626,7 +653,22 @@ class ExactInference(InferenceModule):
         current position is known.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        newBeliefs = DiscreteDistribution()
+        for oldPos in self.allPositions:
+            oldProb = self.beliefs[oldPos]
+            # 优化：只有当旧位置有概率时才进行扩散
+            if oldProb > 0:
+                # 获取转移概率分布 P(newPos | oldPos)
+                # newPosDist 是一个字典: {位置A: 0.8, 位置B: 0.2 ...}
+                newPosDist = self.getPositionDistribution(gameState, oldPos)
+
+                for newPos, transitionProb in newPosDist.items():
+                    newBeliefs[newPos] = (
+                        newBeliefs.get(newPos, 0) + oldProb * transitionProb
+                    )
+
+        self.beliefs = newBeliefs
+
         "*** END YOUR CODE HERE ***"
 
     def getBeliefDistribution(self):
@@ -659,7 +701,10 @@ class ParticleFilter(InferenceModule):
         """
         self.particles = []
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        numLegalPositions = len(self.legalPositions)
+        for i in range(self.numParticles):
+            pos = self.legalPositions[i % numLegalPositions]
+            self.particles.append(pos)
         "*** END YOUR CODE HERE ***"
 
     def getBeliefDistribution(self):
@@ -671,7 +716,11 @@ class ParticleFilter(InferenceModule):
         This function should return a normalized distribution.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        belifes = DiscreteDistribution()
+        for p in self.particles:
+            belifes[p] += 1
+        belifes.normalize()
+        return belifes
         "*** END YOUR CODE HERE ***"
 
     ########### ########### ###########
@@ -691,7 +740,32 @@ class ParticleFilter(InferenceModule):
         the DiscreteDistribution may be useful.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        pacmanPosition = gameState.getPacmanPosition()
+        jailPosition = self.getJailPosition()
+
+        # 1. 构建权重分布
+        weights = DiscreteDistribution()
+
+        for p in self.particles:
+            # 计算当前粒子位置产生该观测值的概率
+            prob = self.getObservationProb(observation, pacmanPosition, p, jailPosition)
+            # 累加权重 (DiscreteDistribution 本质是字典，可以直接 +=)
+            # 注意：这会自动处理多个粒子在同一位置的情况
+            weights[p] += prob
+
+        # 2. 处理特殊情况：所有粒子权重为0 (跟丢了)
+        if weights.total() == 0:
+            self.initializeUniformly(gameState)
+            return
+
+        # 3. 重采样 (Resampling)
+        # 根据权重分布，重新抽取 self.numParticles 个粒子
+        newParticles = []
+        for _ in range(self.numParticles):
+            # sample() 会根据 value 的大小作为概率来返回 key (位置)
+            newParticles.append(weights.sample())
+
+        self.particles = newParticles
         "*** END YOUR CODE HERE ***"
 
     ########### ########### ###########
@@ -704,5 +778,10 @@ class ParticleFilter(InferenceModule):
         gameState.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        newParticles = []
+        for oldPos in self.particles:
+            newPosDist = self.getPositionDistribution(gameState, oldPos)
+            newPos = newPosDist.sample()
+            newParticles.append(newPos)
+        self.particles = newParticles
         "*** END YOUR CODE HERE ***"
