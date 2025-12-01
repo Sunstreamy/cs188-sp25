@@ -208,3 +208,6 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 prj0/.DS_Store
+prj5/machinelearning/data/lang_id.npz
+.gitignore
+prj5/machinelearning/data/mnist.npz
