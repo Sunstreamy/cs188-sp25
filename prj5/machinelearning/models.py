@@ -139,6 +139,9 @@ class DigitClassificationModel(Module):
         input_size = 28 * 28
         output_size = 10
         "*** YOUR CODE HERE ***"
+        hidden_size = 400
+        self.layer1 = Linear(input_size, hidden_size)
+        self.layer2 = Linear(hidden_size, output_size)
 
     def forward(self, x):
         """
@@ -155,6 +158,13 @@ class DigitClassificationModel(Module):
                 (also called logits)
         """
         """ YOUR CODE HERE """
+        # 第一层 + 激活
+        out = self.layer1(x)
+        out = relu(out)
+
+        # 输出层 (无激活)
+        out = self.layer2(out)
+        return out
 
 
 class LanguageIDModel(Module):
