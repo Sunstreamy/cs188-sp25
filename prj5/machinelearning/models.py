@@ -186,6 +186,15 @@ class LanguageIDModel(Module):
         super(LanguageIDModel, self).__init__()
         "*** YOUR CODE HERE ***"
         # Initialize your model parameters here
+        self.hidden_size = 400
+        self.initial_layer = Linear(self.num_chars, self.hidden_size)
+
+        # 3. 循环层：处理后续字符 xi 和 上一步记忆 hi
+        # 既然是相加，两个层的输出维度必须一样
+        self.layer_x = Linear(self.num_chars, self.hidden_size)  # 处理当前字符
+        self.layer_h = Linear(self.hidden_size, self.hidden_size)  # 处理旧记忆
+
+        self.output_layer = Linear(self.hidden_size, len(self.languages))
 
     def forward(self, xs):
         """
@@ -217,6 +226,17 @@ class LanguageIDModel(Module):
                 (also called logits)
         """
         "*** YOUR CODE HERE ***"
+        h = self.initial_layer(xs[0])
+        h = relu(h)
+
+        for x in xs:
+            px = self.layer_x(x)
+            ph = self.layer_h(h)
+
+            h = px + ph
+            h = relu(h)
+        out = self.output_layer(h)
+        return out
 
 
 def Convolve(input: tensor, weight: tensor):

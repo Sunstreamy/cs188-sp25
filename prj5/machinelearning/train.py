@@ -144,6 +144,24 @@ def train_languageid(model, dataset):
     """
     model.train()
     "*** YOUR CODE HERE ***"
+    BatchSize = 32
+    learningRate = 0.001
+    optimizer = optim.Adam(model.parameters(), lr=learningRate)
+    dataloader = DataLoader(dataset, batch_size=BatchSize, shuffle=True)
+    while True:
+        for batch in dataloader:
+            x = batch["x"]
+            y = batch["label"]
+            x = movedim(x, 0, 1)
+
+            optimizer.zero_grad()
+            predY = model(x)
+            loss = languageid_loss(predY, y)
+            loss.backward()
+            optimizer.step()
+        valAc = dataset.get_validation_accuracy()
+        if valAc > 0.85:
+            break
 
 
 def Train_DigitConvolution(model, dataset):
