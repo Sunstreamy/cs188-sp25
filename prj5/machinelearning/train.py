@@ -169,3 +169,27 @@ def Train_DigitConvolution(model, dataset):
     Trains the model.
     """
     """ YOUR CODE HERE """
+    learningRate = 0.001
+    batchSize = 64
+
+    optimizer = optim.Adam(model.parameters(), lr=learningRate)
+    dataloadar = DataLoader(dataset, batch_size=batchSize, shuffle=True)
+
+    while True:
+        for batch in dataloadar:
+            x = batch["x"]
+            y = batch["label"]
+
+            # 标准 5 步曲
+            optimizer.zero_grad()
+            predicted_y = model(x)
+            # 注意：这里调用的是你刚才在 losses.py 里写的 digitconvolution_Loss
+            loss = digitconvolution_Loss(predicted_y, y)
+            loss.backward()
+            optimizer.step()
+
+        val_acc = dataset.get_validation_accuracy()
+        print(f"Validation Accuracy: {val_acc * 100:.2f}%")
+
+        if val_acc > 0.85:
+            break

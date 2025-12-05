@@ -258,8 +258,18 @@ def Convolve(input: tensor, weight: tensor):
     input_tensor_dimensions = input.shape
     weight_dimensions = weight.shape
     Output_Tensor = tensor(())
-    "*** YOUR CODE HERE ***"
 
+    "*** YOUR CODE HERE ***"
+    outputRows = input_tensor_dimensions[0] - weight_dimensions[0] + 1
+    outputCols = input_tensor_dimensions[1] - weight_dimensions[1] + 1
+    # 2. 初始化输出张量 (全0)
+    Output_Tensor = zeros((outputRows, outputCols))
+
+    for i in range(outputRows):
+        for j in range(outputCols):
+            tar = input[i : i + weight_dimensions[0], j : j + weight_dimensions[1]]
+            value = (tar * weight).sum()
+            Output_Tensor[i, j] = value
     "*** End Code ***"
     return Output_Tensor
 
@@ -283,6 +293,13 @@ class DigitConvolutionalModel(Module):
 
         self.convolution_weights = Parameter(ones((3, 3)))
         """ YOUR CODE HERE """
+        # 1. 计算卷积后的输入维度: (28-3+1) * (28-3+1) = 26 * 26 = 676
+        input_dim = 26 * 26
+        hidden_size = 128  # 随便选个中等大小
+
+        # 2. 定义全连接层 (分类器)
+        self.layer1 = Linear(input_dim, hidden_size)
+        self.layer2 = Linear(hidden_size, output_size)
 
     def forward(self, x):
         """
@@ -295,6 +312,11 @@ class DigitConvolutionalModel(Module):
         )
         x = x.flatten(start_dim=1)
         """ YOUR CODE HERE """
+        x = self.layer1(x)
+        x = relu(x)
+        x = self.layer2(x)
+
+        return x
 
 
 class Attention(Module):
