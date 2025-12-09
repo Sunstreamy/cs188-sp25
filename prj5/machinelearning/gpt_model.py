@@ -13,7 +13,6 @@ https://github.com/openai/gpt-2/blob/master/src/model.py
 https://github.com/huggingface/transformers/blob/main/src/transformers/models/gpt2/modeling_gpt2.py
 """
 
-
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
@@ -24,6 +23,7 @@ class Transformer_Block(nn.Module):
     """
     This class builds the basic transformer block.
     """
+
     def __init__(self, n_embd, block_size):
         super().__init__()
 
@@ -32,30 +32,40 @@ class Transformer_Block(nn.Module):
         self.linear_1 = nn.Linear(n_embd, n_embd)
         self.norm_2 = nn.LayerNorm(n_embd)
 
-
     def forward(self, x):
         """YOUR CODE HERE"""
-     
-       
+        attetionOutput = self.attn_block(x)
+        x = x + attetionOutput
+        x = self.norm_1(x)
+        linearOutput = self.linear_1(x)
+        linearOutput = F.relu(linearOutput)
+        x = x + attetionOutput
+        x = self.norm_2(x)
+
+        return x
+
 
 class Character_GPT(nn.Module):
-   
+
     def __init__(self, block_size, n_embd, n_layer, vocab_size):
         super().__init__()
         self.block_size = block_size
-        self.embed = nn.Embedding(vocab_size, n_embd) #Embedding layer, think of this as similar to a linear layer
+        self.embed = nn.Embedding(
+            vocab_size, n_embd
+        )  # Embedding layer, think of this as similar to a linear layer
 
-        
-        self.transformer_blocks = nn.ModuleList([Transformer_Block(n_embd, block_size) for _ in range(n_layer)]) #You can treat this as a python list
-        self.norm = nn.LayerNorm(n_embd) #Normalization Layer
+        self.transformer_blocks = nn.ModuleList(
+            [Transformer_Block(n_embd, block_size) for _ in range(n_layer)]
+        )  # You can treat this as a python list
+        self.norm = nn.LayerNorm(n_embd)  # Normalization Layer
         self.output_layer = nn.Linear(n_embd, vocab_size, bias=False)
-
-
 
     def get_loss(self, input, target):
         output = self(input)
-        return F.cross_entropy(output.view(-1, output.size(-1)), target.view(-1), ignore_index=-1)
-        
+        return F.cross_entropy(
+            output.view(-1, output.size(-1)), target.view(-1), ignore_index=-1
+        )
+
     def forward(self, input):
         """
         This function should take in an input representing a sequence of characters, and output
@@ -66,10 +76,34 @@ class Character_GPT(nn.Module):
         final model, you will have to pass the input through every object in this list.
         """
         b, t = input.size()
-        assert t <= self.block_size, f"Cannot forward sequence of length {t}, block size is only {self.block_size}"
+        assert (
+            t <= self.block_size
+        ), f"Cannot forward sequence of length {t}, block size is only {self.block_size}"
 
         """YOUR CODE HERE"""
-       
+        # 1. Embedding Layer (嵌入层)
+        # 将输入的字符索引 (indices) 转换为向量 (vectors)
+        # 对应图中最底部的 "Text & Position Embed" (这里简化为只有 token embedding)
+        x = self.embed(input)
+
+        # 2. Transformer Blocks (堆叠的 Transformer 块)
+        # 对应图中间的 "12x" 部分
+        # 我们需要遍历 self.transformer_blocks 列表，把数据依次喂给每一层
+        for block in self.transformer_blocks:
+            x = block(x)
+
+        # 3. Final Normalization (最终归一化)
+        # 对应图中上面一层的 "Layer Norm"
+        x = self.norm(x)
+
+        # 4. Output Layer (输出层/解码头)
+        # 对应图中最顶部的 "Text Prediction"
+        # 将向量映射回词表大小 (vocab_size)，用于预测下一个字符
+        # 注意：讲义特别强调这一层不要加激活函数 (should not have an activation function)
+        x = self.output_layer(x)
+
+        return x
+
     @torch.no_grad()
     def generate(self, idx, max_new_tokens):
         """
@@ -78,7 +112,9 @@ class Character_GPT(nn.Module):
         """
         for _ in range(max_new_tokens):
             # if the sequence context is growing too long we must crop it at block_size
-            idx_cond = idx if idx.size(1) <= self.block_size else idx[:, -self.block_size:]
+            idx_cond = (
+                idx if idx.size(1) <= self.block_size else idx[:, -self.block_size :]
+            )
             # forward the model to get the logits for the index in the sequence
             logits = self(idx_cond)
             # pluck the logits at the final step and scale by desired temperature
@@ -88,9 +124,9 @@ class Character_GPT(nn.Module):
             # apply softmax to convert logits to (normalized) probabilities
             probs = F.softmax(logits, dim=-1)
             # either sample from the distribution or take the most likely element
-            
+
             idx_next = torch.multinomial(probs, num_samples=1)
-            
+
             # append sampled index to the running sequence and continue
             idx = torch.cat((idx, idx_next), dim=1)
 

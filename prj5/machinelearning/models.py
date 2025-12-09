@@ -356,3 +356,17 @@ class Attention(Module):
         B, T, C = input.size()
 
         """YOUR CODE HERE"""
+        Q = self.q_layer(input)
+        K = self.k_layer(input)
+        V = self.v_layer(input)
+
+        K_t = movedim(K, 1, 2)
+        scores = matmul(Q, K_t)
+        scores = scores / (self.layer_size**0.5)
+
+        scores = scores.masked_fill(self.mask[:, :, :T, :T] == 0, float("-inf"))[0]
+
+        probabilities = softmax(scores, dim=-1)
+
+        output = matmul(probabilities, V)
+        return output
